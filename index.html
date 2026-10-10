@@ -239,7 +239,7 @@
                         </div>
 
                         <!-- Face Detection Box Overlay -->
-                        <div id="faceBoundingBox" class="absolute w-44 h-52 border-2 border-emerald-400/80 rounded-2xl transition-all duration-300 flex flex-col justify-between p-2 pointer-events-none opacity-90 shadow-[0_0_25px_rgba(16,185,129,0.25)]">
+                        <div id="faceBoundingBox" class="hidden absolute w-44 h-52 border-2 border-emerald-400/80 rounded-2xl transition-all duration-300 flex flex-col justify-between p-2 pointer-events-none opacity-90 shadow-[0_0_25px_rgba(16,185,129,0.25)]">
                             <div class="flex justify-between">
                                 <div class="w-3.5 h-3.5 border-t-2 border-l-2 border-emerald-300"></div>
                                 <div class="w-3.5 h-3.5 border-t-2 border-r-2 border-emerald-300"></div>
@@ -266,15 +266,25 @@
                                 <span id="scanStatusDot" class="h-2.5 w-2.5 rounded-full bg-amber-400 animate-ping"></span>
                                 <span id="scanStatusText" class="text-xs font-semibold text-slate-200">En attente de passage devant la porte...</span>
                             </div>
-                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/60">IA Ready</span>
+                            <span id="aiBadge" class="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">IA : attente</span>
                         </div>
                     </div>
 
-                    <!-- Quick Vendor Selection (Simulation Mode) -->
+                    <!-- Recognition sensitivity -->
+                    <div class="w-full max-w-lg mt-3 flex items-center justify-between text-[11px] text-slate-400">
+                        <span><i class="fa-solid fa-sliders mr-1.5"></i>Sensibilité de la reconnaissance</span>
+                        <select id="strictSelect" onchange="setStrictness(this.value)" class="bg-slate-900 text-slate-200 text-[11px] px-2 py-1 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500">
+                            <option value="0.45">Stricte (moins d'erreurs)</option>
+                            <option value="0.5" selected>Normale</option>
+                            <option value="0.55">Souple (plus tolérante)</option>
+                        </select>
+                    </div>
+
+                    <!-- Manual backup -->
                     <div class="w-full mt-6">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Passage Vendeur (Simulation Directe):</span>
-                            <span class="text-[10px] text-teal-400">Cliquez un vendeur pour pointer l'entrée</span>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pointage manuel (secours) :</span>
+                            <span class="text-[10px] text-amber-400">Seulement si le visage n'est pas reconnu</span>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="quickVendorButtons">
                             <!-- Injected dynamically via JS -->
@@ -471,6 +481,7 @@
                                 <th class="pb-3">Entrée Aujourd'hui</th>
                                 <th class="pb-3">Moyenne Arrivée Semaine</th>
                                 <th class="pb-3">Statut Entrée</th>
+                                <th class="pb-3">Visage</th>
                                 <th class="pb-3 text-right pr-2">Action Directe</th>
                             </tr>
                         </thead>
@@ -554,7 +565,7 @@
                             <!-- Injected dynamically -->
                         </tbody>
                     </table>
-                    <p class="text-[10px] text-slate-500 mt-3">Heure d'entrée standard : 08:30 · « Absent » = aucun pointage ce jour-là · « - » = jour pas encore passé.</p>
+                    <p class="text-[10px] text-slate-500 mt-3">Heure d'entrée standard : 08:30 · « Absent » = aucun pointage ce jour-là · « - » = jour pas encore passé · * = pointage manuel.</p>
                 </div>
 
                 <div class="pt-8 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
@@ -574,6 +585,47 @@
     </main>
 
     <!-- ADD VENDOR MODAL -->
+    <!-- FACE ENROLLMENT MODAL -->
+    <div id="faceModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden z-[60] flex items-center justify-center p-4 overflow-y-auto">
+        <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Enregistrer le visage</h3>
+                    <p id="enrollName" class="text-xs text-emerald-300 font-semibold">--</p>
+                </div>
+                <button onclick="closeFaceEnroll()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="relative rounded-2xl overflow-hidden bg-black aspect-video border border-slate-800">
+                <video id="enrollVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                <div id="enrollPrompt" class="absolute bottom-3 inset-x-3 text-center text-sm font-bold text-white bg-slate-950/75 rounded-xl py-2 px-3">Prêt</div>
+            </div>
+
+            <div id="enrollDots" class="flex justify-center space-x-2"></div>
+
+            <label class="flex items-start space-x-2 text-[11px] text-slate-400 cursor-pointer">
+                <input type="checkbox" id="enrollConsent" class="mt-0.5 accent-emerald-500">
+                <span>Le vendeur a été informé et accepte que son visage soit enregistré pour le pointage d'entrée.</span>
+            </label>
+            <label class="flex items-start space-x-2 text-[11px] text-slate-400 cursor-pointer">
+                <input type="checkbox" id="enrollUsePhoto" checked class="mt-0.5 accent-emerald-500">
+                <span>Utiliser la première photo comme photo de profil du vendeur.</span>
+            </label>
+
+            <p id="enrollStatus" class="text-xs text-slate-300 min-h-[2rem]"></p>
+
+            <div class="flex flex-wrap gap-2">
+                <button id="enrollStartBtn" onclick="startEnrollment()" class="flex-1 min-w-[140px] py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+                    <i class="fa-solid fa-camera mr-1.5"></i>Démarrer la capture
+                </button>
+                <button id="enrollClearBtn" onclick="clearFaceData()" class="hidden px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600 hover:text-white">
+                    Effacer le visage
+                </button>
+            </div>
+            <p class="text-[10px] text-slate-500">Conseil : bonne lumière sur le visage, iPad à hauteur du visage, sans lunettes de soleil ni casquette. 5 photos sont prises avec de légers changements d'angle.</p>
+        </div>
+    </div>
+
     <div id="addVendorModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
         <div class="soothing-glass rounded-3xl p-6 max-w-md w-full space-y-4 border border-slate-800">
             <div class="flex justify-between items-center">
@@ -649,7 +701,12 @@
             startClock();
             initWebcam();
             initCharts();
+            try {
+                const saved = localStorage.getItem('mb_strict');
+                if (saved) { matchThreshold = parseFloat(saved) || 0.5; document.getElementById('strictSelect').value = String(saved); }
+            } catch (e) {}
             recompute();
+            recoTick();
             // Kiosk left open overnight: refresh statuses when the day changes
             window._lastDay = localDate(new Date());
             setInterval(() => {
@@ -692,6 +749,7 @@
                 return Object.assign({}, v, { isCheckedIn: !!rec, todayCheckIn: rec ? rec.time : null, avgWeeklyTime: avg });
             });
             logs = Object.values(todayMap).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+            if (faceReady) buildFaceIndex();
             refreshAll();
         }
 
@@ -715,16 +773,24 @@
             setInterval(update, 1000);
         }
 
+        let camStream = null;
+        async function getCamStream() {
+            if (camStream && camStream.active) return camStream;
+            camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } });
+            return camStream;
+        }
+
         async function initWebcam() {
             const video = document.getElementById('webcamVideo');
             const sim = document.getElementById('simulatedCam');
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                const stream = await getCamStream();
                 video.srcObject = stream;
                 video.classList.remove('hidden');
                 sim.classList.add('hidden');
             } catch (e) {
-                console.log('Mode Simulation Détecteur Facile Actif.');
+                console.log('Caméra indisponible.');
+                setScan("Caméra inaccessible : autorisez la caméra dans le navigateur (HTTPS requis).", 'rose');
             }
         }
 
@@ -777,74 +843,421 @@
             });
         }
 
-        // Facial Entrance Check-in Logic (Single Action: ENTRY)
+        // ---------- Scan status helper ----------
+        const IDLE_TEXT = "En attente de passage devant la porte...";
+        let scanState = '', scanHoldUntil = 0;
+        function setScan(text, color, holdMs) {
+            const t = document.getElementById('scanStatusText');
+            const dot = document.getElementById('scanStatusDot');
+            if (t) t.textContent = text;
+            scanState = text;
+            scanHoldUntil = Date.now() + (holdMs || 0);
+            const colors = { amber: 'bg-amber-400 animate-ping', teal: 'bg-teal-400 animate-ping', emerald: 'bg-emerald-400', rose: 'bg-rose-400' };
+            if (dot) dot.className = 'h-2.5 w-2.5 rounded-full ' + (colors[color] || colors.amber);
+        }
+        function setBadge(text, ok) {
+            const b = document.getElementById('aiBadge');
+            if (!b) return;
+            b.textContent = text;
+            b.className = 'text-[10px] font-mono px-2 py-0.5 rounded border ' + (ok
+                ? 'text-emerald-400 bg-emerald-950/50 border-emerald-800/60'
+                : 'text-slate-400 bg-slate-900 border-slate-700');
+        }
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        // ---------- Check-in core (face recognition AND manual backup) ----------
+        function registerCheckIn(vendor, method) {
+            const now = new Date();
+            const currentTime = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const isLate = currentTime > '08:30';
+            const statusLabel = isLate ? 'En Retard' : 'À l\'heure';
+
+            const rec = {
+                vendorId: vendor.id,
+                name: vendor.name,
+                date: localDate(now),
+                time: currentTime,
+                status: statusLabel,
+                method: method,
+                ts: Date.now()
+            };
+
+            // Save to Firebase (syncs to all devices) + update screen right away
+            window.cloud.saveAttendance(rec);
+            attendance = attendance.filter(x => !(x.vendorId === rec.vendorId && x.date === rec.date));
+            attendance.push(rec);
+            recompute();
+
+            document.getElementById('confAvatar').src = vendor.photo;
+            document.getElementById('confName').textContent = vendor.name;
+            document.getElementById('confRole').textContent = `${vendor.dept} • Maxi Bazar`;
+            document.getElementById('confTime').textContent = `Entrée Enregistrée à ${currentTime}`;
+            document.getElementById('confMessage').innerHTML = `
+                <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span>${method === 'visage' ? 'Visage reconnu !' : 'Pointage manuel.'} Entrée validée pour <strong>${esc(vendor.name)}</strong> (${statusLabel}).</span>
+            `;
+            setScan('Entrée confirmée : ' + vendor.name, 'emerald', 3000);
+        }
+
+        // Manual backup (button tap)
         function triggerFaceCheckIn(vendorId) {
             if (!isCamActive) {
                 alert("La caméra est actuellement en pause.");
                 return;
             }
-
             const vendor = vendors.find(v => v.id === vendorId);
             if (!vendor) return;
-
             if (vendor.isCheckedIn) {
                 alert(`${vendor.name} a déjà pointé aujourd'hui à ${vendor.todayCheckIn}.`);
                 return;
             }
+            if (!confirm(`Pointage manuel : enregistrer l'entrée de ${vendor.name} ?`)) return;
+            registerCheckIn(vendor, 'manuel');
+        }
 
-            const statusDot = document.getElementById('scanStatusDot');
-            const statusText = document.getElementById('scanStatusText');
-            
-            statusText.textContent = `Analyse du visage: ${vendor.name}...`;
-            statusDot.className = "h-2.5 w-2.5 rounded-full bg-teal-400 animate-ping";
+        // ============================================================
+        //  REAL FACE RECOGNITION (runs inside the browser, free)
+        // ============================================================
+        // Two sources (the 2nd is only used if the 1st can't be loaded)
+        const FACE_SOURCES = [
+            { id: 'A',
+              lib: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js',
+              models: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/' },
+            { id: 'B',
+              lib: 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js',
+              models: 'https://justadudewhohacks.github.io/face-api.js/models/' }
+        ];
+        let faceEnginePromise = null, faceEngineId = null;
+        let faceReady = false, faceLoading = false;
+        let faceIndex = [];                 // [{id, descs:[Float32Array...]}]
+        let matchThreshold = 0.5;           // lower = stricter
+        let recoStreak = { id: null, n: 0 };
+        let recoCooldownUntil = 0, unknownFrames = 0;
+        const recoLastSeen = {};
+        let enrollModalOpen = false, enrollRunning = false, enrollCancel = false, enrollVendorId = null;
 
-            setTimeout(() => {
-                const now = new Date();
-                const currentTime = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                
-                const isLate = currentTime > '08:30';
-                const statusLabel = isLate ? 'En Retard' : 'À l\'heure';
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const el = document.createElement('script');
+                el.src = src;
+                el.onload = resolve;
+                el.onerror = () => reject(new Error('Impossible de charger ' + src));
+                document.head.appendChild(el);
+            });
+        }
 
-                const rec = {
-                    vendorId: vendor.id,
-                    name: vendor.name,
-                    date: localDate(now),
-                    time: currentTime,
-                    status: statusLabel,
-                    ts: Date.now()
-                };
+        function loadFaceEngine() {
+            if (faceEnginePromise) return faceEnginePromise;
+            faceEnginePromise = (async () => {
+                let lastErr = null;
+                for (const src of FACE_SOURCES) {
+                    try {
+                        window.faceapi = undefined;
+                        await loadScript(src.lib);
+                        if (!window.faceapi) throw new Error('Bibliothèque introuvable');
+                        await faceapi.nets.tinyFaceDetector.loadFromUri(src.models);
+                        await faceapi.nets.faceLandmark68Net.loadFromUri(src.models);
+                        await faceapi.nets.faceRecognitionNet.loadFromUri(src.models);
+                        faceEngineId = src.id;
+                        return true;
+                    } catch (e) {
+                        lastErr = e;
+                        console.warn('Source ' + src.id + ' échouée', e);
+                    }
+                }
+                faceEnginePromise = null;
+                throw lastErr || new Error('Moteur indisponible');
+            })();
+            return faceEnginePromise;
+        }
 
-                // Save to Firebase (syncs to all devices) + update screen right away
-                window.cloud.saveAttendance(rec);
-                attendance = attendance.filter(x => !(x.vendorId === rec.vendorId && x.date === rec.date));
-                attendance.push(rec);
-                recompute();
+        // Largest face in the frame, with its 128-number fingerprint
+        async function detectBest(video) {
+            if (!video || video.readyState < 2 || !video.videoWidth) return null;
+            const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+            const all = await faceapi.detectAllFaces(video, opts).withFaceLandmarks().withFaceDescriptors();
+            if (!all.length) return null;
+            all.sort((a, b) => b.detection.box.area - a.detection.box.area);
+            return all[0];
+        }
 
-                // UI Confirmation Update
-                document.getElementById('confAvatar').src = vendor.photo;
-                document.getElementById('confName').textContent = vendor.name;
-                document.getElementById('confRole').textContent = `${vendor.dept} • Maxi Bazar`;
-                document.getElementById('confTime').textContent = `Entrée Enregistrée à ${currentTime}`;
+        function buildFaceIndex() {
+            faceIndex = [];
+            rawVendors.forEach(v => {
+                if (v.faces && v.faces.length && (!v.faceModel || v.faceModel === faceEngineId)) {
+                    faceIndex.push({ id: v.id, descs: v.faces.map(f => new Float32Array(f.d)) });
+                }
+            });
+        }
 
-                document.getElementById('confMessage').innerHTML = `
-                    <i class="fa-solid fa-circle-check text-emerald-400"></i>
-                    <span>Visage reconnu ! Entrée validée pour <strong>${vendor.name}</strong> (${statusLabel}).</span>
-                `;
+        // Compare a face to every enrolled vendor (average of the 2 best matches)
+        function matchFace(desc) {
+            let best = { id: null, dist: 9 }, second = 9;
+            faceIndex.forEach(e => {
+                const ds = e.descs.map(d => faceapi.euclideanDistance(desc, d)).sort((a, b) => a - b);
+                const score = ds.length > 1 ? (ds[0] + ds[1]) / 2 : ds[0];
+                if (score < best.dist) { second = best.dist; best = { id: e.id, dist: score }; }
+                else if (score < second) second = score;
+            });
+            return { id: best.id, dist: best.dist, margin: second - best.dist };
+        }
 
-                statusText.textContent = "Entrée Confirmée !";
-                statusDot.className = "h-2.5 w-2.5 rounded-full bg-emerald-400";
+        function setStrictness(v) {
+            matchThreshold = parseFloat(v) || 0.5;
+            try { localStorage.setItem('mb_strict', String(matchThreshold)); } catch (e) {}
+        }
 
-                renderRecentLogs();
-                renderQuickVendorButtons();
-                renderEmployeeTable();
-                renderReportTable();
+        function kioskVisible() {
+            const el = document.getElementById('section-kiosk');
+            return el && !el.classList.contains('hidden');
+        }
 
-                setTimeout(() => {
-                    statusText.textContent = "En attente de passage devant la porte...";
-                    statusDot.className = "h-2.5 w-2.5 rounded-full bg-amber-400 animate-ping";
-                }, 2800);
+        function hideFaceBox() {
+            const box = document.getElementById('faceBoundingBox');
+            if (box) box.classList.add('hidden');
+        }
+        function showFaceBox(b, video) {
+            const box = document.getElementById('faceBoundingBox');
+            const vp = document.getElementById('scannerViewport');
+            if (!box || !vp) return;
+            const cw = vp.clientWidth, ch = vp.clientHeight;
+            const sc = Math.max(cw / video.videoWidth, ch / video.videoHeight);   // object-cover
+            const ox = (cw - video.videoWidth * sc) / 2, oy = (ch - video.videoHeight * sc) / 2;
+            box.style.left = (b.x * sc + ox) + 'px';
+            box.style.top = (b.y * sc + oy) + 'px';
+            box.style.width = (b.width * sc) + 'px';
+            box.style.height = (b.height * sc) + 'px';
+            box.classList.remove('hidden');
+        }
 
-            }, 750);
+        async function recognizeFrame(video) {
+            const det = await detectBest(video);
+            if (!det) {
+                recoStreak = { id: null, n: 0 };
+                unknownFrames = 0;
+                hideFaceBox();
+                if (scanState !== IDLE_TEXT && Date.now() > scanHoldUntil) setScan(IDLE_TEXT, 'amber');
+                return;
+            }
+            showFaceBox(det.detection.box, video);
+
+            if (det.detection.box.width / video.videoWidth < 0.15) {
+                recoStreak = { id: null, n: 0 };
+                setScan('Approchez-vous de la caméra', 'teal');
+                return;
+            }
+            if (!faceIndex.length) {
+                setScan("Aucun visage enregistré. Allez dans « Registre Vendeurs » > Enregistrer le visage.", 'rose');
+                return;
+            }
+
+            const m = matchFace(det.descriptor);
+            if (m.id && m.dist <= matchThreshold && m.margin >= 0.04) {
+                unknownFrames = 0;
+                if (recoStreak.id === m.id) recoStreak.n++; else recoStreak = { id: m.id, n: 1 };
+                setScan('Reconnaissance en cours...', 'teal');
+                if (recoStreak.n >= 3) {
+                    recoStreak = { id: null, n: 0 };
+                    onFaceRecognized(m.id);
+                }
+            } else {
+                recoStreak = { id: null, n: 0 };
+                unknownFrames++;
+                if (unknownFrames >= 4) setScan('Visage non reconnu. Regardez la caméra de face.', 'rose');
+            }
+        }
+
+        function onFaceRecognized(id) {
+            const v = vendors.find(x => x.id === id);
+            if (!v) return;
+            recoCooldownUntil = Date.now() + 2500;
+            if (v.isCheckedIn) {
+                setScan(`Bonjour ${v.name}, entrée déjà enregistrée à ${v.todayCheckIn}.`, 'emerald', 3000);
+                return;
+            }
+            registerCheckIn(v, 'visage');
+        }
+
+        // Main loop: waits until everything is ready, then scans ~6 times per second
+        async function recoTick() {
+            let delay = 500;
+            try {
+                if (window.appAuthed && kioskVisible() && isCamActive && !enrollModalOpen) {
+                    const video = document.getElementById('webcamVideo');
+                    if (video && video.srcObject && video.readyState >= 2 && video.videoWidth) {
+                        if (!faceReady) {
+                            if (!faceLoading) {
+                                faceLoading = true;
+                                setScan('Chargement de la reconnaissance faciale (première fois : quelques secondes)...', 'teal');
+                                loadFaceEngine().then(() => {
+                                    faceReady = true;
+                                    buildFaceIndex();
+                                    setBadge('IA prête', true);
+                                    setScan(IDLE_TEXT, 'amber');
+                                }).catch(() => {
+                                    setBadge('IA indisponible', false);
+                                    setScan('Reconnaissance indisponible (vérifiez internet). Utilisez le pointage manuel.', 'rose');
+                                    setTimeout(() => { faceLoading = false; }, 30000);   // retry later
+                                });
+                            }
+                        } else if (Date.now() >= recoCooldownUntil) {
+                            await recognizeFrame(video);
+                            delay = 150;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                delay = 1000;
+            }
+            setTimeout(recoTick, delay);
+        }
+
+        // ============================================================
+        //  ENROLLMENT (take photos once, remember the face)
+        // ============================================================
+        const ENROLL_STEPS = [
+            'Regardez droit devant',
+            'Tournez très légèrement à gauche',
+            'Tournez très légèrement à droite',
+            'Relevez un peu le menton',
+            'Regardez droit devant et souriez'
+        ];
+
+        function renderEnrollDots(done) {
+            document.getElementById('enrollDots').innerHTML = ENROLL_STEPS.map((_, i) =>
+                `<span class="h-3 w-3 rounded-full ${i < done ? 'bg-emerald-400' : 'bg-slate-700'}"></span>`).join('');
+        }
+        function enrollStatus(text, isError) {
+            const el = document.getElementById('enrollStatus');
+            el.textContent = text;
+            el.className = 'text-xs min-h-[2rem] ' + (isError ? 'text-rose-400' : 'text-slate-300');
+        }
+
+        async function openFaceEnroll(id) {
+            const v = rawVendors.find(x => x.id === id);
+            if (!v) return;
+            enrollVendorId = id;
+            enrollModalOpen = true; enrollCancel = false; enrollRunning = false;
+            hideFaceBox();
+            document.getElementById('faceModal').classList.remove('hidden');
+            document.getElementById('enrollName').textContent = `${v.name} - ${v.dept}`;
+            document.getElementById('enrollConsent').checked = false;
+            document.getElementById('enrollPrompt').textContent = 'Prêt';
+            document.getElementById('enrollStartBtn').disabled = false;
+            document.getElementById('enrollClearBtn').classList.toggle('hidden', !(v.faces && v.faces.length));
+            renderEnrollDots(0);
+            enrollStatus('Placez le vendeur devant la caméra, cochez la case de consentement, puis démarrez la capture.');
+            const video = document.getElementById('enrollVideo');
+            try {
+                video.srcObject = await getCamStream();
+                await video.play().catch(() => {});
+            } catch (e) {
+                enrollStatus("Caméra inaccessible. Autorisez la caméra dans le navigateur (le site doit être en HTTPS).", true);
+            }
+        }
+
+        function closeFaceEnroll() {
+            enrollCancel = true; enrollModalOpen = false; enrollRunning = false;
+            const video = document.getElementById('enrollVideo');
+            video.srcObject = null;      // the camera itself stays on for the kiosk
+            document.getElementById('faceModal').classList.add('hidden');
+        }
+
+        function cropFace(video, box) {
+            const side0 = Math.max(box.width, box.height) * 1.5;
+            const side = Math.min(side0, video.videoWidth, video.videoHeight);
+            const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+            const sx = Math.min(Math.max(0, cx - side / 2), video.videoWidth - side);
+            const sy = Math.min(Math.max(0, cy - side / 2), video.videoHeight - side);
+            const c = document.createElement('canvas');
+            c.width = 160; c.height = 160;
+            c.getContext('2d').drawImage(video, sx, sy, side, side, 0, 0, 160, 160);
+            return c.toDataURL('image/jpeg', 0.7);
+        }
+
+        async function startEnrollment() {
+            if (enrollRunning) return;
+            if (!document.getElementById('enrollConsent').checked) {
+                enrollStatus("Cochez d'abord la case de consentement du vendeur.", true);
+                return;
+            }
+            const video = document.getElementById('enrollVideo');
+            if (!video.srcObject) { enrollStatus("Caméra inaccessible.", true); return; }
+            enrollRunning = true; enrollCancel = false;
+            const startBtn = document.getElementById('enrollStartBtn');
+            startBtn.disabled = true;
+            renderEnrollDots(0);
+
+            enrollStatus('Chargement du moteur de reconnaissance (première fois : quelques secondes)...');
+            try {
+                await loadFaceEngine();
+                faceReady = true;
+            } catch (e) {
+                enrollStatus("Impossible de charger la reconnaissance faciale. Vérifiez la connexion internet et réessayez.", true);
+                enrollRunning = false; startBtn.disabled = false;
+                return;
+            }
+
+            const samples = [];
+            let photo = null;
+            for (let i = 0; i < ENROLL_STEPS.length; i++) {
+                if (enrollCancel) return;
+                document.getElementById('enrollPrompt').textContent = ENROLL_STEPS[i];
+                enrollStatus(`Photo ${i + 1} sur ${ENROLL_STEPS.length}...`);
+                await sleep(1400);
+
+                let got = null;
+                const t0 = Date.now();
+                while (!got && !enrollCancel && Date.now() - t0 < 7000) {
+                    const det = await detectBest(video);
+                    if (det && det.detection.score >= 0.7 && det.detection.box.width / video.videoWidth >= 0.2) got = det;
+                    else await sleep(150);
+                }
+                if (enrollCancel) return;
+                if (!got) {
+                    document.getElementById('enrollPrompt').textContent = 'Visage non détecté';
+                    enrollStatus("Visage non détecté. Rapprochez-vous, ajoutez de la lumière, regardez la caméra, puis relancez la capture.", true);
+                    enrollRunning = false; startBtn.disabled = false;
+                    return;
+                }
+                if (i === 0) photo = cropFace(video, got.detection.box);
+                samples.push({ d: Array.from(got.descriptor).map(x => Math.round(x * 10000) / 10000) });
+                renderEnrollDots(i + 1);
+                document.getElementById('enrollPrompt').textContent = '✓ Photo prise';
+                await sleep(500);
+            }
+
+            // Save to Firebase
+            const raw = rawVendors.find(x => x.id === enrollVendorId);
+            if (!raw) { closeFaceEnroll(); return; }
+            raw.faces = samples;
+            raw.faceModel = faceEngineId || '';
+            raw.faceDate = localDate(new Date());
+            if (document.getElementById('enrollUsePhoto').checked && photo) raw.photo = photo;
+            window.cloud.saveVendor(raw);
+            buildFaceIndex();
+            recompute();
+
+            document.getElementById('enrollPrompt').textContent = '✓ Visage enregistré';
+            enrollStatus(`Visage de ${raw.name} enregistré. Il sera reconnu automatiquement à la borne d'entrée.`);
+            document.getElementById('enrollClearBtn').classList.remove('hidden');
+            enrollRunning = false; startBtn.disabled = false;
+        }
+
+        function clearFaceData() {
+            const raw = rawVendors.find(x => x.id === enrollVendorId);
+            if (!raw) return;
+            if (!confirm(`Effacer les données de visage de ${raw.name} ?`)) return;
+            raw.faces = [];
+            raw.faceModel = '';
+            raw.faceDate = '';
+            window.cloud.saveVendor(raw);
+            buildFaceIndex();
+            recompute();
+            document.getElementById('enrollClearBtn').classList.add('hidden');
+            renderEnrollDots(0);
+            enrollStatus('Données de visage effacées.');
         }
 
         function renderRecentLogs() {
@@ -899,6 +1312,14 @@
                         <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold ${v.isCheckedIn ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
                             ${v.isCheckedIn ? 'Présent au Bazar' : 'Attendu à la porte'}
                         </span>
+                    </td>
+                    <td class="py-3">
+                        ${(v.faces && v.faces.length)
+                            ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"><i class="fa-solid fa-check mr-1"></i>${v.faces.length} photos</span>`
+                            : '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">Non enregistré</span>'}
+                        <button onclick="openFaceEnroll('${v.id}')" class="mt-1.5 block px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-[11px] transition-all">
+                            <i class="fa-solid fa-camera mr-1"></i>${(v.faces && v.faces.length) ? 'Refaire' : 'Enregistrer le visage'}
+                        </button>
                     </td>
                     <td class="py-3 text-right pr-2">
                         <button onclick="triggerFaceCheckIn('${v.id}')" class="px-3 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-[11px] transition-all">
@@ -976,7 +1397,7 @@
                         present++;
                         const isLate = String(rec.status).includes('Retard');
                         if (isLate) late++;
-                        return `<td class="p-2 text-center"><span class="font-mono font-semibold ${isLate ? 'text-amber-400' : 'text-emerald-400'}">${esc(rec.time)}</span></td>`;
+                        return `<td class="p-2 text-center"><span class="font-mono font-semibold ${isLate ? 'text-amber-400' : 'text-emerald-400'}">${esc(rec.time)}${rec.method === 'manuel' ? '*' : ''}</span></td>`;
                     }
                     const beforeStart = r.since && x.s < r.since;
                     const isAbsentDay = !beforeStart && (x.s < todayStr || (x.s === todayStr && afternoon)) && !r.removed;
@@ -1132,6 +1553,7 @@
             renderReportTable();
             closeAddVendorModal();
             document.getElementById('addVendorForm').reset();
+            setTimeout(() => openFaceEnroll(newVendor.id), 300);   // enroll the face right away
         }
 
         function removeVendor(id) {
@@ -1243,6 +1665,7 @@
             }
 
             onAuthStateChanged(auth, async (user) => {
+                window.appAuthed = !!user;
                 if (unsubVendors) { unsubVendors(); unsubVendors = null; }
                 if (unsubAtt) { unsubAtt(); unsubAtt = null; }
                 if (!user) {
