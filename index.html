@@ -487,10 +487,15 @@
             
             <div class="no-print soothing-glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h3 class="text-sm font-bold text-white">Rapport du Jour d'Arrivée du Personnel</h3>
-                    <p class="text-xs text-slate-400">Téléchargez ou imprimez la fiche de présence d'entrée du Maxi Bazar</p>
+                    <h3 class="text-sm font-bold text-white">Rapport Hebdomadaire du Personnel</h3>
+                    <p class="text-xs text-slate-400">Résumé de la semaine : heures d'entrée, présences et absences de tous les vendeurs</p>
                 </div>
-                <div class="flex items-center space-x-3">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center space-x-1">
+                        <button onclick="changeReportWeek(-1)" title="Semaine précédente" class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="changeReportWeek(0)" class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all">Cette semaine</button>
+                        <button onclick="changeReportWeek(1)" title="Semaine suivante" class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
                     <button onclick="exportReportPDF()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white flex items-center space-x-2 transition-all shadow-lg shadow-rose-600/20">
                         <i class="fa-solid fa-file-pdf text-sm"></i>
                         <span>Télécharger PDF</span>
@@ -504,18 +509,18 @@
 
             <!-- PDF Container -->
             <div id="pdfReportContainer" class="bg-slate-950 text-slate-100 p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
-                
+
                 <div class="flex justify-between items-start border-b border-slate-800 pb-6">
                     <div>
                         <div class="flex items-center space-x-3">
                             <i class="fa-solid fa-store text-emerald-400 text-2xl"></i>
                             <h1 class="text-2xl font-extrabold text-white tracking-wider">MAXI BAZAR</h1>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">Registre Officiel des Entrées Vendeurs (Reconnaissance Faciale)</p>
+                        <p class="text-xs text-slate-400 mt-1">Registre Hebdomadaire des Entrées Vendeurs</p>
                     </div>
                     <div class="text-right text-xs">
-                        <p class="font-bold text-emerald-400 uppercase tracking-widest">Rapport d'Entrée</p>
-                        <p id="reportDateText" class="text-slate-300 font-mono mt-1">Date: --/--/----</p>
+                        <p class="font-bold text-emerald-400 uppercase tracking-widest">Rapport de la Semaine</p>
+                        <p id="reportDateText" class="text-slate-300 font-mono mt-1">Semaine du --/--/---- au --/--/----</p>
                         <p class="text-slate-500">Borne iPad Portes Principales</p>
                     </div>
                 </div>
@@ -527,42 +532,35 @@
                         <span id="repTotalStaff" class="text-xl font-bold text-white">0</span>
                     </div>
                     <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Présents à la Porte</span>
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Présences</span>
                         <span id="repPresentCount" class="text-xl font-bold text-emerald-400">0</span>
                     </div>
                     <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Arrivées à l'Heure</span>
-                        <span id="repOnTimeCount" class="text-xl font-bold text-teal-400">0</span>
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Retards</span>
+                        <span id="repLateCount" class="text-xl font-bold text-amber-400">0</span>
                     </div>
                     <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Retards Détectés</span>
-                        <span id="repLateCount" class="text-xl font-bold text-rose-400">0</span>
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Absences</span>
+                        <span id="repAbsentCount" class="text-xl font-bold text-rose-400">0</span>
                     </div>
                 </div>
 
-                <!-- Log Table for Report -->
+                <!-- Weekly table -->
                 <div>
-                    <h3 class="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider">Détails des Pointages d'Arrivée du Jour</h3>
+                    <h3 class="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider">Récapitulatif de la semaine - tous les vendeurs</h3>
                     <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="border-b border-slate-800 bg-slate-900/80 text-slate-300">
-                                <th class="p-2.5">Vendeur</th>
-                                <th class="p-2.5">Rayon</th>
-                                <th class="p-2.5">Heure d'Entrée</th>
-                                <th class="p-2.5">Ponctualité</th>
-                                <th class="p-2.5">Validation Biométrique</th>
-                            </tr>
-                        </thead>
+                        <thead id="reportTableHead"></thead>
                         <tbody id="reportTableBody" class="divide-y divide-slate-800 text-slate-300">
                             <!-- Injected dynamically -->
                         </tbody>
                     </table>
+                    <p class="text-[10px] text-slate-500 mt-3">Heure d'entrée standard : 08:30 · « Absent » = aucun pointage ce jour-là · « - » = jour pas encore passé.</p>
                 </div>
 
                 <div class="pt-8 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
                     <div>
                         <p class="font-semibold text-slate-300">Direction Maxi Bazar</p>
-                        <p class="text-[10px] text-slate-500 mt-0.5">Visa du registre journalier</p>
+                        <p class="text-[10px] text-slate-500 mt-0.5">Visa du registre hebdomadaire</p>
                         <div class="mt-6 w-36 border-b border-dashed border-slate-700"></div>
                     </div>
                     <div class="text-right">
@@ -620,21 +618,47 @@
             { id: 'V05', name: 'Yassine Brahimi', dept: 'Caisse Principale', photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80', stdCheckIn: '08:30', isCheckedIn: false, todayCheckIn: null, avgWeeklyTime: '08:28', lateMinutes: 0 }
         ];
 
-        let vendors = [];
-        let logs = [];
+        let vendors = [];      // vendors with today's status (computed)
+        let logs = [];         // today's check-ins (computed)
+        let rawVendors = [];   // vendors straight from Firebase
+        let attendance = [];   // every dated check-in: {vendorId, name, date, time, status, ts}
+        let reportWeekOffset = 0;   // 0 = this week, -1 = last week...
+        let currentReportStart = '';
+        const WEEK_DAYS = 6;        // Saturday -> Thursday (change to 7 to include Friday)
+        const DAY_NAMES = ['Samedi','Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
         let isCamActive = true;
         let weeklyChartInstance = null;
         let punctualityChartInstance = null;
+
+        // ---------- Date helpers (local time) ----------
+        function localDate(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+        // Week starts on Saturday
+        function weekStartOf(d) {
+            const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            return addDays(x, -((x.getDay() + 1) % 7));
+        }
+        function esc(t) {
+            return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
 
         // On Page Load
         window.onload = function() {
             startClock();
             initWebcam();
             initCharts();
-            refreshAll();
+            recompute();
+            // Kiosk left open overnight: refresh statuses when the day changes
+            window._lastDay = localDate(new Date());
+            setInterval(() => {
+                const d = localDate(new Date());
+                if (d !== window._lastDay) { window._lastDay = d; recompute(); }
+            }, 30000);
         };
 
-        // Re-render everything (called whenever cloud data changes)
+        // Re-render everything
         function refreshAll() {
             renderQuickVendorButtons();
             renderRecentLogs();
@@ -643,11 +667,39 @@
             updateDashboardMetrics();
         }
 
-        // Called by the Firebase module when data arrives / changes
-        window.onCloudData = function(newVendors, newLogs) {
-            vendors = newVendors;
-            logs = newLogs;
+        // Build today's status for each vendor from the dated attendance records
+        function recompute() {
+            const today = localDate(new Date());
+            const ws = weekStartOf(new Date());
+            const weekDates = [];
+            for (let i = 0; i < WEEK_DAYS; i++) weekDates.push(localDate(addDays(ws, i)));
+
+            const todayMap = {};
+            attendance.forEach(a => { if (a.date === today) todayMap[a.vendorId] = a; });
+
+            vendors = rawVendors.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).map(v => {
+                const rec = todayMap[v.id];
+                const weekRecs = attendance.filter(a => a.vendorId === v.id && weekDates.includes(a.date));
+                let avg = '-';
+                if (weekRecs.length) {
+                    const total = weekRecs.reduce((sum, a) => {
+                        const [h, m] = String(a.time).split(':').map(Number);
+                        return sum + h * 60 + m;
+                    }, 0);
+                    const mins = Math.round(total / weekRecs.length);
+                    avg = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+                }
+                return Object.assign({}, v, { isCheckedIn: !!rec, todayCheckIn: rec ? rec.time : null, avgWeeklyTime: avg });
+            });
+            logs = Object.values(todayMap).sort((a, b) => (b.ts || 0) - (a.ts || 0));
             refreshAll();
+        }
+
+        // Called by the Firebase module when data arrives / changes
+        window.onCloudData = function(newVendors, newAttendance) {
+            rawVendors = newVendors;
+            attendance = newAttendance;
+            recompute();
         };
 
         function startClock() {
@@ -658,7 +710,6 @@
                 
                 document.getElementById('liveClock').textContent = timeStr;
                 document.getElementById('liveDate').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-                document.getElementById('reportDateText').textContent = 'Date: ' + now.toLocaleDateString('fr-FR');
             }
             update();
             setInterval(update, 1000);
@@ -736,6 +787,11 @@
             const vendor = vendors.find(v => v.id === vendorId);
             if (!vendor) return;
 
+            if (vendor.isCheckedIn) {
+                alert(`${vendor.name} a déjà pointé aujourd'hui à ${vendor.todayCheckIn}.`);
+                return;
+            }
+
             const statusDot = document.getElementById('scanStatusDot');
             const statusText = document.getElementById('scanStatusText');
             
@@ -746,26 +802,23 @@
                 const now = new Date();
                 const currentTime = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                 
-                vendor.isCheckedIn = true;
-                vendor.todayCheckIn = currentTime;
-
                 const isLate = currentTime > '08:30';
                 const statusLabel = isLate ? 'En Retard' : 'À l\'heure';
 
-                // Prevent duplicate entries in logs list for same vendor
-                const newLog = {
+                const rec = {
                     vendorId: vendor.id,
                     name: vendor.name,
+                    date: localDate(now),
                     time: currentTime,
                     status: statusLabel,
                     ts: Date.now()
                 };
-                logs = logs.filter(l => l.vendorId !== vendor.id);
-                logs.unshift(newLog);
 
-                // Save to Firebase (syncs to all devices)
-                window.cloud.saveVendor(vendor);
-                window.cloud.saveLog(newLog);
+                // Save to Firebase (syncs to all devices) + update screen right away
+                window.cloud.saveAttendance(rec);
+                attendance = attendance.filter(x => !(x.vendorId === rec.vendorId && x.date === rec.date));
+                attendance.push(rec);
+                recompute();
 
                 // UI Confirmation Update
                 document.getElementById('confAvatar').src = vendor.photo;
@@ -809,7 +862,7 @@
                     <div class="flex items-center space-x-3">
                         <img src="${vendor.photo}" class="w-8 h-8 rounded-xl object-cover border border-slate-700" alt="">
                         <div>
-                            <p class="text-xs font-bold text-slate-200">${log.name}</p>
+                            <p class="text-xs font-bold text-slate-200">${esc(log.name)}</p>
                             <p class="text-[10px] text-slate-400 font-mono">Entrée à ${log.time}</p>
                         </div>
                     </div>
@@ -832,11 +885,11 @@
                     <td class="py-3 pl-2 flex items-center space-x-3">
                         <img src="${v.photo}" class="w-8 h-8 rounded-xl object-cover border border-slate-700" alt="">
                         <div>
-                            <p class="font-bold text-white">${v.name}</p>
+                            <p class="font-bold text-white">${esc(v.name)}</p>
                             <p class="text-[10px] text-slate-500">ID: ${v.id}</p>
                         </div>
                     </td>
-                    <td class="py-3 text-slate-300">${v.dept}</td>
+                    <td class="py-3 text-slate-300">${esc(v.dept)}</td>
                     <td class="py-3 font-mono text-slate-400">${v.stdCheckIn}</td>
                     <td class="py-3 font-mono">
                         ${v.todayCheckIn ? `<span class="text-emerald-400 font-semibold">${v.todayCheckIn}</span>` : '<span class="text-slate-500">Non pointé</span>'}
@@ -851,32 +904,110 @@
                         <button onclick="triggerFaceCheckIn('${v.id}')" class="px-3 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-[11px] transition-all">
                             Pointer Entrée
                         </button>
+                        <button onclick="removeVendor('${v.id}')" title="Supprimer ce vendeur" class="ml-2 px-2.5 py-1 rounded-lg bg-rose-600/15 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-[11px] transition-all">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
+        function changeReportWeek(delta) {
+            reportWeekOffset = delta === 0 ? 0 : reportWeekOffset + delta;
+            renderReportTable();
+        }
+
         function renderReportTable() {
+            const ws = addDays(weekStartOf(new Date()), reportWeekOffset * 7);
+            const dates = [];
+            for (let i = 0; i < WEEK_DAYS; i++) {
+                const d = addDays(ws, i);
+                dates.push({ d: d, s: localDate(d) });
+            }
+            currentReportStart = dates[0].s;
+
+            const fmt = d => d.toLocaleDateString('fr-FR');
+            document.getElementById('reportDateText').textContent =
+                `Semaine du ${fmt(dates[0].d)} au ${fmt(dates[dates.length - 1].d)}`;
+
+            const now = new Date();
+            const todayStr = localDate(now);
+            const afternoon = now.getHours() >= 12;
+
+            const attMap = {};
+            attendance.forEach(a => { attMap[a.vendorId + '_' + a.date] = a; });
+
+            // rows: current vendors + removed vendors who still have records this week
+            const rows = vendors.map(v => ({ id: v.id, name: v.name, dept: v.dept, since: v.createdDate || '', removed: false }));
+            const known = new Set(vendors.map(v => v.id));
+            const inWeek = new Set(dates.map(x => x.s));
+            attendance.forEach(a => {
+                if (inWeek.has(a.date) && !known.has(a.vendorId)) {
+                    known.add(a.vendorId);
+                    rows.push({ id: a.vendorId, name: a.name, dept: '-', since: '', removed: true });
+                }
+            });
+
+            // header
+            const thHtml = dates.map(x => {
+                const dayName = DAY_NAMES[(x.d.getDay() + 1) % 7];
+                const short = x.d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                return `<th class="p-2 text-center">${dayName}<span class="block text-[9px] font-normal text-slate-500">${short}</span></th>`;
+            }).join('');
+            document.getElementById('reportTableHead').innerHTML = `
+                <tr class="border-b border-slate-800 bg-slate-900/80 text-slate-300">
+                    <th class="p-2.5">Vendeur</th>${thHtml}
+                    <th class="p-2 text-center text-emerald-400">Présent</th>
+                    <th class="p-2 text-center text-amber-400">Retard</th>
+                    <th class="p-2 text-center text-rose-400">Absent</th>
+                </tr>`;
+
+            // body
+            let totPresent = 0, totLate = 0, totAbsent = 0;
             const tbody = document.getElementById('reportTableBody');
             tbody.innerHTML = '';
 
-            vendors.forEach(v => {
+            rows.forEach(r => {
+                let present = 0, late = 0, absent = 0;
+                const cells = dates.map(x => {
+                    const rec = attMap[r.id + '_' + x.s];
+                    if (rec) {
+                        present++;
+                        const isLate = String(rec.status).includes('Retard');
+                        if (isLate) late++;
+                        return `<td class="p-2 text-center"><span class="font-mono font-semibold ${isLate ? 'text-amber-400' : 'text-emerald-400'}">${esc(rec.time)}</span></td>`;
+                    }
+                    const beforeStart = r.since && x.s < r.since;
+                    const isAbsentDay = !beforeStart && (x.s < todayStr || (x.s === todayStr && afternoon)) && !r.removed;
+                    if (isAbsentDay) {
+                        absent++;
+                        return `<td class="p-2 text-center"><span class="font-semibold text-rose-400">Absent</span></td>`;
+                    }
+                    return `<td class="p-2 text-center text-slate-600">-</td>`;
+                }).join('');
+
+                totPresent += present; totLate += late; totAbsent += absent;
+
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-800";
                 tr.innerHTML = `
-                    <td class="p-2.5 font-bold text-white">${v.name}</td>
-                    <td class="p-2.5 text-slate-400">${v.dept}</td>
-                    <td class="p-2.5 font-mono text-emerald-400">${v.todayCheckIn || 'En attente d\'entrée'}</td>
                     <td class="p-2.5">
-                        <span class="px-2 py-0.5 rounded text-[10px] ${v.todayCheckIn ? (v.todayCheckIn > '08:30' ? 'bg-rose-950 text-rose-400 border border-rose-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800') : 'bg-slate-900 text-slate-500'}">
-                            ${v.todayCheckIn ? (v.todayCheckIn > '08:30' ? 'Retard' : 'À l\'heure') : 'Non entres'}
-                        </span>
+                        <span class="font-bold text-white">${esc(r.name)}</span>${r.removed ? ' <span class="text-[9px] text-slate-500">(retiré)</span>' : ''}
+                        <span class="block text-[10px] text-slate-500">${esc(r.dept)}</span>
                     </td>
-                    <td class="p-2.5 font-mono text-xs text-slate-400">Scan Facile Valide (iPad)</td>
+                    ${cells}
+                    <td class="p-2 text-center font-bold text-emerald-400">${present}</td>
+                    <td class="p-2 text-center font-bold text-amber-400">${late}</td>
+                    <td class="p-2 text-center font-bold text-rose-400">${absent}</td>
                 `;
                 tbody.appendChild(tr);
             });
+
+            document.getElementById('repTotalStaff').textContent = rows.length;
+            document.getElementById('repPresentCount').textContent = totPresent;
+            document.getElementById('repLateCount').textContent = totLate;
+            document.getElementById('repAbsentCount').textContent = totAbsent;
         }
 
         function updateDashboardMetrics() {
@@ -890,11 +1021,25 @@
             const lates = vendors.filter(v => v.todayCheckIn && v.todayCheckIn > '08:30').length;
             document.getElementById('statLateCount').textContent = lates;
 
-            // Report summary
-            document.getElementById('repTotalStaff').textContent = total;
-            document.getElementById('repPresentCount').textContent = present;
-            document.getElementById('repOnTimeCount').textContent = present - lates;
-            document.getElementById('repLateCount').textContent = lates;
+            // Real weekly charts (this week, from saved attendance)
+            if (weeklyChartInstance && punctualityChartInstance) {
+                const ws = weekStartOf(new Date());
+                const ontime = [], lateArr = [];
+                let sumOn = 0, sumLate = 0;
+                for (let i = 0; i < WEEK_DAYS; i++) {
+                    const ds = localDate(addDays(ws, i));
+                    const recs = attendance.filter(a => a.date === ds);
+                    const l = recs.filter(a => String(a.status).includes('Retard')).length;
+                    ontime.push(recs.length - l);
+                    lateArr.push(l);
+                    sumOn += recs.length - l; sumLate += l;
+                }
+                weeklyChartInstance.data.datasets[0].data = ontime;
+                weeklyChartInstance.data.datasets[1].data = lateArr;
+                weeklyChartInstance.update();
+                punctualityChartInstance.data.datasets[0].data = (sumOn + sumLate) ? [sumOn, sumLate] : [1, 0];
+                punctualityChartInstance.update();
+            }
         }
 
         function initCharts() {
@@ -974,10 +1119,12 @@
                 isCheckedIn: false,
                 todayCheckIn: null,
                 avgWeeklyTime: '08:30',
-                lateMinutes: 0
+                lateMinutes: 0,
+                createdDate: localDate(new Date())
             };
 
-            vendors.push(newVendor);
+            rawVendors.push(newVendor);
+            recompute();
             window.cloud.saveVendor(newVendor);
 
             renderQuickVendorButtons();
@@ -985,6 +1132,15 @@
             renderReportTable();
             closeAddVendorModal();
             document.getElementById('addVendorForm').reset();
+        }
+
+        function removeVendor(id) {
+            const v = vendors.find(x => x.id === id);
+            if (!v) return;
+            if (!confirm(`Supprimer ${v.name} ?\n\nIl n'apparaîtra plus dans la liste de pointage. Son historique passé reste visible dans les rapports des semaines précédentes.`)) return;
+            window.cloud.deleteVendor(id);
+            rawVendors = rawVendors.filter(x => x.id !== id);
+            recompute();
         }
 
         function filterEmployees() {
@@ -1001,10 +1157,10 @@
             const element = document.getElementById('pdfReportContainer');
             const opt = {
                 margin:       0.4,
-                filename:     `Maxi_Bazar_Entrees_${new Date().toISOString().slice(0,10)}.pdf`,
+                filename:     `Maxi_Bazar_Rapport_Semaine_${currentReportStart}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, backgroundColor: '#050914' },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
             html2pdf().set(opt).from(element).save();
         }
@@ -1022,7 +1178,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs, writeBatch }
+        import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, getDocs, writeBatch }
             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -1041,19 +1197,22 @@
 
         if (firebaseConfig.apiKey.startsWith('PASTE')) {
             loginError.textContent = "Firebase n'est pas configuré : collez votre firebaseConfig dans index.html.";
-            window.cloud = { saveVendor() {}, saveLog() {}, logout() {} };
+            window.cloud = { saveVendor() {}, saveAttendance() {}, deleteVendor() {}, logout() {} };
         } else {
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
-            let unsubVendors = null, unsubLogs = null;
-            let vendorsCache = [], logsCache = [];
+            let unsubVendors = null, unsubAtt = null;
+            let vendorsCache = [], attendanceCache = [];
 
-            const push = () => window.onCloudData(vendorsCache, logsCache);
+            const push = () => window.onCloudData(vendorsCache, attendanceCache);
+            const fail = (e) => alert('Erreur: ' + e.message);
 
             window.cloud = {
-                saveVendor: (v) => setDoc(doc(db, 'vendors', v.id), v).catch(e => alert('Erreur de sauvegarde: ' + e.message)),
-                saveLog: (l) => setDoc(doc(db, 'logs', l.vendorId), l).catch(e => alert('Erreur de sauvegarde: ' + e.message)),
+                saveVendor: (v) => setDoc(doc(db, 'vendors', v.id), v).catch(fail),
+                // one record per vendor per day -> id = date_vendorId
+                saveAttendance: (r) => setDoc(doc(db, 'attendance', r.date + '_' + r.vendorId), r).catch(fail),
+                deleteVendor: (id) => deleteDoc(doc(db, 'vendors', id)).catch(fail),
                 logout: () => signOut(auth)
             };
 
@@ -1069,43 +1228,42 @@
                 }
             });
 
-            // First run: if the database is empty, load the demo vendors once
-            async function seedIfEmpty() {
+            // First run only: load the demo vendors once (never again, even if you delete them all)
+            async function seedOnce() {
+                const metaRef = doc(db, 'meta', 'init');
+                const meta = await getDoc(metaRef);
+                if (meta.exists()) return;
                 const snap = await getDocs(collection(db, 'vendors'));
-                if (!snap.empty) return;
-                const batch = writeBatch(db);
-                defaultVendors.forEach(v => batch.set(doc(db, 'vendors', v.id), v));
-                const t = Date.now();
-                [
-                    { vendorId: 'V02', name: 'Amine Benali', time: '08:18', status: "À l'heure", ts: t - 3 },
-                    { vendorId: 'V03', name: 'Sarah Toumi', time: '08:26', status: "À l'heure", ts: t - 2 },
-                    { vendorId: 'V04', name: 'Karim Mansouri', time: '08:42', status: 'En Retard (+12m)', ts: t - 1 }
-                ].forEach(l => batch.set(doc(db, 'logs', l.vendorId), l));
-                await batch.commit();
+                if (snap.empty) {
+                    const batch = writeBatch(db);
+                    defaultVendors.forEach(v => batch.set(doc(db, 'vendors', v.id), v));
+                    await batch.commit();
+                }
+                await setDoc(metaRef, { seeded: true, ts: Date.now() });
             }
 
             onAuthStateChanged(auth, async (user) => {
                 if (unsubVendors) { unsubVendors(); unsubVendors = null; }
-                if (unsubLogs) { unsubLogs(); unsubLogs = null; }
+                if (unsubAtt) { unsubAtt(); unsubAtt = null; }
                 if (!user) {
                     loginOverlay.classList.remove('hidden');
                     logoutBtn.classList.add('hidden');
-                    vendorsCache = []; logsCache = []; push();
+                    vendorsCache = []; attendanceCache = []; push();
                     return;
                 }
                 loginOverlay.classList.add('hidden');
                 logoutBtn.classList.remove('hidden');
-                try { await seedIfEmpty(); } catch (e) { console.error(e); }
+                try { await seedOnce(); } catch (e) { console.error(e); }
 
                 unsubVendors = onSnapshot(collection(db, 'vendors'), (snap) => {
                     vendorsCache = snap.docs.map(d => d.data());
                     push();
-                }, (e) => alert('Erreur de lecture: ' + e.message));
+                }, fail);
 
-                unsubLogs = onSnapshot(collection(db, 'logs'), (snap) => {
-                    logsCache = snap.docs.map(d => d.data()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+                unsubAtt = onSnapshot(collection(db, 'attendance'), (snap) => {
+                    attendanceCache = snap.docs.map(d => d.data());
                     push();
-                }, (e) => alert('Erreur de lecture: ' + e.message));
+                }, fail);
             });
         }
     </script>
