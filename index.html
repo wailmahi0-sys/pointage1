@@ -103,6 +103,59 @@
             scrollbar-width: none;
         }
 
+
+        /* ===== Report sheet (light, A4 landscape friendly) ===== */
+        .rp { background:#fff; color:#0f172a; font-size:14px; line-height:1.35; padding:2em 2.2em; box-sizing:border-box;
+              width:100%; min-width:900px; border-radius:1em; box-shadow:0 10px 40px rgba(0,0,0,.45);
+              -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        .rp * { box-sizing:border-box; }
+        .rp-head { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:.8em; border-bottom:.22em solid #059669; }
+        .rp-brand { font-size:1.9em; font-weight:800; letter-spacing:.05em; color:#0f172a; line-height:1.1; }
+        .rp-sub { font-size:.8em; color:#64748b; }
+        .rp-week { text-align:right; }
+        .rp-week b { font-size:1.15em; color:#065f46; }
+        .rp-stats { display:flex; gap:.8em; margin:1em 0 1.1em; }
+        .rp-stat { flex:1; border:1px solid #e2e8f0; background:#f8fafc; border-radius:.6em; padding:.5em .9em; display:flex; justify-content:space-between; align-items:center; }
+        .rp-stat span { font-size:.72em; color:#64748b; text-transform:uppercase; font-weight:700; letter-spacing:.05em; }
+        .rp-stat b { font-size:1.5em; }
+        .rp-table { width:100%; border-collapse:collapse; }
+        .rp-table th { background:#0f172a; color:#fff; padding:.5em .4em; font-size:.8em; font-weight:700; text-align:center; letter-spacing:.03em; }
+        .rp-table th small { display:block; font-weight:400; opacity:.7; font-size:.85em; }
+        .rp-table th.rp-th-name { text-align:left; padding-left:.8em; border-radius:.5em 0 0 0; }
+        .rp-table th:last-child { border-radius:0 .5em 0 0; }
+        .rp-table td { padding:.42em .4em; border-bottom:1px solid #e2e8f0; text-align:center; vertical-align:middle; }
+        .rp-table tbody tr:nth-child(even) { background:#f8fafc; }
+        .rp-cell { cursor:pointer; }
+        .rp-cell:hover { background:#ecfdf5; }
+        .rp-name { text-align:left !important; font-weight:700; padding-left:.8em !important; }
+        .rp-dept { display:block; font-size:.78em; color:#64748b; font-weight:400; }
+        .rp-ok { color:#047857; font-weight:700; font-family:ui-monospace,Menlo,monospace; }
+        .rp-late { color:#b45309; font-weight:700; font-family:ui-monospace,Menlo,monospace; }
+        .rp-abs { color:#b91c1c; font-weight:700; font-size:.9em; }
+        .rp-pend { color:#cbd5e1; }
+        .rp-exit { display:block; font-size:.78em; color:#64748b; font-family:ui-monospace,Menlo,monospace; font-weight:400; }
+        .rp-tot { font-weight:800; font-size:1.05em; }
+        .rp-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:2em; margin-top:1.1em; font-size:.75em; color:#64748b; }
+        .rp-sign { border-top:1px solid #94a3b8; min-width:14em; text-align:center; padding-top:.3em; color:#475569; }
+        /* fixed-size sheet used for PDF / print */
+        .rp-page { position:fixed; left:-20000px; top:0; width:1123px; height:790px; min-width:0; overflow:hidden;
+                   display:flex; flex-direction:column; border-radius:0; box-shadow:none; }
+        .rp-page > * { flex-shrink:0; }
+        .rp-page .rp-foot { margin-top:auto; padding-top:1em; }
+        .rp-page.rp-visible { left:0; z-index:99999; }
+        .rp-page .rp-cell { cursor:default; }
+        /* compact layout for big teams (keeps text readable on one page) */
+        .rp-compact .rp-head { padding-bottom:.5em; }
+        .rp-compact .rp-stats { margin:.6em 0 .7em; }
+        .rp-compact .rp-stat { padding:.3em .8em; }
+        .rp-compact .rp-table td { padding:.2em .3em; }
+        .rp-compact .rp-table th { padding:.35em .3em; }
+        .rp-compact .rp-table th small { display:inline; margin-left:.4em; }
+        .rp-compact .rp-dept { display:inline; margin-left:.6em; }
+        .rp-compact .rp-exit { display:inline; margin-left:.4em; }
+        .rp-compact .rp-foot { margin-top:.6em; }
+        @page { size: A4 landscape; margin: 0; }
+
         @media print {
             body {
                 background: white !important;
@@ -120,6 +173,8 @@
                 box-shadow: none !important;
                 color: black !important;
             }
+            body.printing-sheet > *:not(#printSheet) { display: none !important; }
+            #printSheet { position: static !important; left: auto !important; margin: 0 !important; }
         }
     </style>
 </head>
@@ -529,67 +584,37 @@
                 </div>
             </div>
 
-            <!-- PDF Container -->
-            <div id="pdfReportContainer" class="bg-slate-950 text-slate-100 p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
-
-                <div class="flex justify-between items-start border-b border-slate-800 pb-6">
-                    <div>
-                        <div class="flex items-center space-x-3">
-                            <i class="fa-solid fa-store text-emerald-400 text-2xl"></i>
-                            <h1 class="text-2xl font-extrabold text-white tracking-wider">MAXI BAZAR</h1>
+            <!-- PDF Container (light A4 sheet) -->
+            <div class="overflow-x-auto no-scrollbar pb-2">
+                <div id="pdfReportContainer" class="rp">
+                    <div class="rp-head">
+                        <div>
+                            <div class="rp-brand">MAXI BAZAR</div>
+                            <div class="rp-sub">Rapport hebdomadaire de présence du personnel</div>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">Registre Hebdomadaire des Entrées Vendeurs</p>
+                        <div class="rp-week">
+                            <b id="reportDateText">Semaine du --/--/---- au --/--/----</b>
+                            <div class="rp-sub">Édité le <span id="reportEditDate">--/--/----</span></div>
+                        </div>
                     </div>
-                    <div class="text-right text-xs">
-                        <p class="font-bold text-emerald-400 uppercase tracking-widest">Rapport de la Semaine</p>
-                        <p id="reportDateText" class="text-slate-300 font-mono mt-1">Semaine du --/--/---- au --/--/----</p>
-                        <p class="text-slate-500">Borne iPad Portes Principales</p>
-                    </div>
-                </div>
 
-                <!-- Stats summary bar -->
-                <div class="grid grid-cols-4 gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 text-center">
-                    <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Total Vendeurs</span>
-                        <span id="repTotalStaff" class="text-xl font-bold text-white">0</span>
+                    <div class="rp-stats">
+                        <div class="rp-stat"><span>Vendeurs</span><b id="repTotalStaff">0</b></div>
+                        <div class="rp-stat"><span>Présences</span><b id="repPresentCount" style="color:#047857">0</b></div>
+                        <div class="rp-stat"><span>Retards</span><b id="repLateCount" style="color:#b45309">0</b></div>
+                        <div class="rp-stat"><span>Absences</span><b id="repAbsentCount" style="color:#b91c1c">0</b></div>
                     </div>
-                    <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Présences</span>
-                        <span id="repPresentCount" class="text-xl font-bold text-emerald-400">0</span>
-                    </div>
-                    <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Retards</span>
-                        <span id="repLateCount" class="text-xl font-bold text-amber-400">0</span>
-                    </div>
-                    <div>
-                        <span class="block text-[10px] uppercase font-bold text-slate-400">Absences</span>
-                        <span id="repAbsentCount" class="text-xl font-bold text-rose-400">0</span>
-                    </div>
-                </div>
 
-                <!-- Weekly table -->
-                <div>
-                    <h3 class="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider">Récapitulatif de la semaine - tous les vendeurs</h3>
-                    <table class="w-full text-left text-xs border-collapse">
+                    <table class="rp-table">
                         <thead id="reportTableHead"></thead>
-                        <tbody id="reportTableBody" class="divide-y divide-slate-800 text-slate-300">
-                            <!-- Injected dynamically -->
-                        </tbody>
+                        <tbody id="reportTableBody"></tbody>
                     </table>
-                    <p class="text-[10px] text-slate-500 mt-3">Heure d'entrée standard : 08:30 · « Absent » = aucun pointage ce jour-là · « - » = jour pas encore passé · * = pointage manuel ou modifié · → = heure de sortie.</p>
-                </div>
 
-                <div class="pt-8 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
-                    <div>
-                        <p class="font-semibold text-slate-300">Direction Maxi Bazar</p>
-                        <p class="text-[10px] text-slate-500 mt-0.5">Visa du registre hebdomadaire</p>
-                        <div class="mt-6 w-36 border-b border-dashed border-slate-700"></div>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] text-slate-500">Système automatisé de contrôle d'entrée par reconnaissance faciale.</p>
+                    <div class="rp-foot">
+                        <div>Entrée standard 08:30 · Retard = après 08:30 · Absent = aucun pointage ce jour-là · - = jour pas encore passé · * = pointage manuel ou modifié · → = heure de sortie</div>
+                        <div class="rp-sign">Visa de la direction</div>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -1536,6 +1561,7 @@
             const fmt = d => d.toLocaleDateString('fr-FR');
             document.getElementById('reportDateText').textContent =
                 `Semaine du ${fmt(dates[0].d)} au ${fmt(dates[dates.length - 1].d)}`;
+            document.getElementById('reportEditDate').textContent = fmt(new Date());
 
             const now = new Date();
             const todayStr = localDate(now);
@@ -1551,7 +1577,7 @@
             attendance.forEach(a => {
                 if (inWeek.has(a.date) && !known.has(a.vendorId)) {
                     known.add(a.vendorId);
-                    rows.push({ id: a.vendorId, name: a.name, dept: '-', since: '', removed: true });
+                    rows.push({ id: a.vendorId, name: a.name, dept: '', since: '', removed: true });
                 }
             });
 
@@ -1559,15 +1585,10 @@
             const thHtml = dates.map(x => {
                 const dayName = DAY_NAMES[(x.d.getDay() + 1) % 7];
                 const short = x.d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-                return `<th class="p-2 text-center">${dayName}<span class="block text-[9px] font-normal text-slate-500">${short}</span></th>`;
+                return `<th>${dayName}<small>${short}</small></th>`;
             }).join('');
-            document.getElementById('reportTableHead').innerHTML = `
-                <tr class="border-b border-slate-800 bg-slate-900/80 text-slate-300">
-                    <th class="p-2.5">Vendeur</th>${thHtml}
-                    <th class="p-2 text-center text-emerald-400">Présent</th>
-                    <th class="p-2 text-center text-amber-400">Retard</th>
-                    <th class="p-2 text-center text-rose-400">Absent</th>
-                </tr>`;
+            document.getElementById('reportTableHead').innerHTML =
+                `<tr><th class="rp-th-name">Vendeur</th>${thHtml}<th>Présent</th><th>Retard</th><th>Absent</th></tr>`;
 
             // body
             let totPresent = 0, totLate = 0, totAbsent = 0;
@@ -1578,35 +1599,31 @@
                 let present = 0, late = 0, absent = 0;
                 const cells = dates.map(x => {
                     const rec = attMap[r.id + '_' + x.s];
-                    const cellAttr = `class="p-2 text-center cursor-pointer hover:bg-slate-800/60" onclick="openEditAtt('${r.id}','${x.s}')" title="Cliquer pour modifier"`;
+                    const cellAttr = `class="rp-cell" onclick="openEditAtt('${r.id}','${x.s}')" title="Cliquer pour modifier"`;
                     if (rec) {
                         present++;
                         const isLate = String(rec.status).includes('Retard');
                         if (isLate) late++;
-                        return `<td ${cellAttr}><span class="font-mono font-semibold ${isLate ? 'text-amber-400' : 'text-emerald-400'}">${esc(rec.time)}${rec.method === 'manuel' ? '*' : ''}</span>${rec.exit ? `<span class="block text-[9px] text-slate-400 font-mono">→ ${esc(rec.exit)}</span>` : ''}</td>`;
+                        return `<td ${cellAttr}><span class="${isLate ? 'rp-late' : 'rp-ok'}">${esc(rec.time)}${rec.method === 'manuel' ? '*' : ''}</span>${rec.exit ? `<span class="rp-exit">→ ${esc(rec.exit)}</span>` : ''}</td>`;
                     }
                     const beforeStart = r.since && x.s < r.since;
                     const isAbsentDay = !beforeStart && (x.s < todayStr || (x.s === todayStr && afternoon)) && !r.removed;
                     if (isAbsentDay) {
                         absent++;
-                        return `<td ${cellAttr}><span class="font-semibold text-rose-400">Absent</span></td>`;
+                        return `<td ${cellAttr}><span class="rp-abs">Absent</span></td>`;
                     }
-                    return `<td ${cellAttr}><span class="text-slate-600">-</span></td>`;
+                    return `<td ${cellAttr}><span class="rp-pend">-</span></td>`;
                 }).join('');
 
                 totPresent += present; totLate += late; totAbsent += absent;
 
                 const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-800";
                 tr.innerHTML = `
-                    <td class="p-2.5">
-                        <span class="font-bold text-white">${esc(r.name)}</span>${r.removed ? ' <span class="text-[9px] text-slate-500">(retiré)</span>' : ''}
-                        <span class="block text-[10px] text-slate-500">${esc(r.dept)}</span>
-                    </td>
+                    <td class="rp-name">${esc(r.name)}${r.removed ? ' <span style="font-weight:400;color:#94a3b8;font-size:.8em">(retiré)</span>' : ''}${r.dept ? `<span class="rp-dept">${esc(r.dept)}</span>` : ''}</td>
                     ${cells}
-                    <td class="p-2 text-center font-bold text-emerald-400">${present}</td>
-                    <td class="p-2 text-center font-bold text-amber-400">${late}</td>
-                    <td class="p-2 text-center font-bold text-rose-400">${absent}</td>
+                    <td class="rp-tot rp-ok">${present}</td>
+                    <td class="rp-tot rp-late">${late}</td>
+                    <td class="rp-tot rp-abs">${absent}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1761,20 +1778,60 @@
             });
         }
 
+        // Build a fixed A4-landscape copy of the report and shrink the text until everything fits on ONE page
+        function buildFitSheet() {
+            const src = document.getElementById('pdfReportContainer');
+            const page = src.cloneNode(true);
+            page.removeAttribute('id');
+            page.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+            page.classList.add('rp-page');
+            document.body.appendChild(page);
+
+            const fits = () => page.scrollHeight <= page.clientHeight + 1;
+            const shrink = (start, min) => {
+                let fs = start;
+                page.style.fontSize = fs + 'px';
+                while (!fits() && fs > min) { fs -= 0.5; page.style.fontSize = fs + 'px'; }
+            };
+            shrink(15, 11);                                   // normal layout, readable sizes
+            if (!fits()) { page.classList.add('rp-compact'); shrink(14, 6); }   // big team: compact layout
+            if (!fits()) {                                    // really too many workers for one page
+                page.style.height = 'auto';
+                page.style.overflow = 'visible';
+                page.dataset.overflow = '1';
+            }
+            return page;
+        }
+
         function exportReportPDF() {
-            const element = document.getElementById('pdfReportContainer');
+            if (typeof html2pdf === 'undefined') { alert("Le module PDF n'est pas chargé. Vérifiez la connexion internet."); return; }
+            const page = buildFitSheet();
+            page.classList.add('rp-visible');
             const opt = {
-                margin:       0.4,
+                margin:       0,
                 filename:     `Maxi_Bazar_Rapport_Semaine_${currentReportStart}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, backgroundColor: '#050914' },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+                html2canvas:  { scale: 2, backgroundColor: '#ffffff', windowWidth: 1123, scrollX: 0, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' }
             };
-            html2pdf().set(opt).from(element).save();
+            html2pdf().set(opt).from(page).save()
+                .then(() => page.remove())
+                .catch(e => { page.remove(); alert('Erreur PDF : ' + e.message); });
         }
 
         function printReport() {
-            window.print();
+            const page = buildFitSheet();
+            page.id = 'printSheet';
+            document.body.classList.add('printing-sheet');
+            const cleanup = () => {
+                document.body.classList.remove('printing-sheet');
+                page.remove();
+                window.removeEventListener('afterprint', cleanup);
+            };
+            window.addEventListener('afterprint', cleanup);
+            setTimeout(() => window.print(), 80);
+            setTimeout(cleanup, 120000);
         }
     </script>
 
