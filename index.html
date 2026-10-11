@@ -219,8 +219,18 @@
                             <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Borne iPad - Entrée Maxi Bazar</span>
                         </div>
                         <span class="text-[11px] bg-slate-900/80 text-emerald-400 px-3 py-1 rounded-xl border border-emerald-500/20 flex items-center gap-1.5">
-                            <i class="fa-solid fa-check text-xs"></i> Pointage Unique d'Arrivée
+                            <i class="fa-solid fa-right-left text-xs"></i> Entrée / Sortie
                         </span>
+                    </div>
+
+                    <!-- MODE SWITCH: Entrée / Sortie -->
+                    <div class="w-full max-w-lg grid grid-cols-2 gap-3 mb-4 z-10">
+                        <button id="modeInBtn" onclick="setKioskMode('in')" class="py-3.5 rounded-2xl text-sm font-extrabold tracking-wide transition-all">
+                            <i class="fa-solid fa-right-to-bracket mr-2"></i>ENTRÉE
+                        </button>
+                        <button id="modeOutBtn" onclick="setKioskMode('out')" class="py-3.5 rounded-2xl text-sm font-extrabold tracking-wide transition-all">
+                            <i class="fa-solid fa-right-from-bracket mr-2"></i>SORTIE
+                        </button>
                     </div>
 
                     <!-- Camera / Scanner Box -->
@@ -228,6 +238,7 @@
                         
                         <!-- Real Webcam or Fallback -->
                         <video id="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover hidden"></video>
+                        <span id="modeBadge" class="absolute top-3 left-3 z-20 px-3 py-1 rounded-lg text-[11px] font-extrabold tracking-wider bg-emerald-500 text-slate-950">MODE : ENTRÉE</span>
                         
                         <!-- Simulated Camera View -->
                         <div id="simulatedCam" class="w-full h-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 flex flex-col items-center justify-center relative">
@@ -301,7 +312,7 @@
                             <div class="flex items-center space-x-4">
                                 <div class="relative">
                                     <img id="confAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" class="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-400/80 shadow-md" alt="Vendeur">
-                                    <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow">ENTRÉE</span>
+                                    <span id="confBadge" class="absolute -bottom-1 -right-1 bg-emerald-500 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow">ENTRÉE</span>
                                 </div>
                                 <div>
                                     <h3 id="confName" class="text-lg font-bold text-white">Sélectionnez un vendeur</h3>
@@ -499,7 +510,7 @@
             <div class="no-print soothing-glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h3 class="text-sm font-bold text-white">Rapport Hebdomadaire du Personnel</h3>
-                    <p class="text-xs text-slate-400">Résumé de la semaine : heures d'entrée, présences et absences de tous les vendeurs</p>
+                    <p class="text-xs text-slate-400">Résumé de la semaine. <span class="text-emerald-400">Cliquez sur une case pour modifier l'heure ou marquer présent / absent.</span></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex items-center space-x-1">
@@ -565,7 +576,7 @@
                             <!-- Injected dynamically -->
                         </tbody>
                     </table>
-                    <p class="text-[10px] text-slate-500 mt-3">Heure d'entrée standard : 08:30 · « Absent » = aucun pointage ce jour-là · « - » = jour pas encore passé · * = pointage manuel.</p>
+                    <p class="text-[10px] text-slate-500 mt-3">Heure d'entrée standard : 08:30 · « Absent » = aucun pointage ce jour-là · « - » = jour pas encore passé · * = pointage manuel ou modifié · → = heure de sortie.</p>
                 </div>
 
                 <div class="pt-8 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
@@ -585,6 +596,39 @@
     </main>
 
     <!-- ADD VENDOR MODAL -->
+    <!-- EDIT ATTENDANCE MODAL -->
+    <div id="editAttModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden z-[70] flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-base font-bold text-white">Modifier le pointage</h3>
+                    <p id="editAttTitle" class="text-xs text-emerald-300 font-semibold capitalize">--</p>
+                </div>
+                <button onclick="closeEditAtt()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Heure d'entrée</label>
+                    <input type="time" id="editAttTime" oninput="updateEditAttPreview()" class="w-full bg-slate-950 text-slate-200 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Heure de sortie (optionnel)</label>
+                    <input type="time" id="editAttExit" class="w-full bg-slate-950 text-slate-200 p-2.5 rounded-xl border border-slate-800 focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+            <p id="editAttPreview" class="text-xs text-slate-300"></p>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="saveEditAtt()" class="flex-1 min-w-[140px] py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+                    <i class="fa-solid fa-check mr-1.5"></i>Enregistrer (présent)
+                </button>
+                <button id="editAttDeleteBtn" onclick="deleteEditAtt()" class="hidden px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600 hover:text-white">
+                    Marquer absent
+                </button>
+            </div>
+            <p class="text-[10px] text-slate-500">« Marquer absent » supprime le pointage de ce jour. Les modifications apparaissent avec une * dans le rapport.</p>
+        </div>
+    </div>
+
     <!-- FACE ENROLLMENT MODAL -->
     <div id="faceModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden z-[60] flex items-center justify-center p-4 overflow-y-auto">
         <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
@@ -705,6 +749,7 @@
                 const saved = localStorage.getItem('mb_strict');
                 if (saved) { matchThreshold = parseFloat(saved) || 0.5; document.getElementById('strictSelect').value = String(saved); }
             } catch (e) {}
+            setKioskMode('in');
             recompute();
             recoTick();
             // Kiosk left open overnight: refresh statuses when the day changes
@@ -746,7 +791,7 @@
                     const mins = Math.round(total / weekRecs.length);
                     avg = String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
                 }
-                return Object.assign({}, v, { isCheckedIn: !!rec, todayCheckIn: rec ? rec.time : null, avgWeeklyTime: avg });
+                return Object.assign({}, v, { isCheckedIn: !!rec, todayCheckIn: rec ? rec.time : null, todayExit: rec ? (rec.exit || '') : '', avgWeeklyTime: avg });
             });
             logs = Object.values(todayMap).sort((a, b) => (b.ts || 0) - (a.ts || 0));
             if (faceReady) buildFaceIndex();
@@ -830,13 +875,13 @@
             
             vendors.forEach(v => {
                 const btn = document.createElement('button');
-                btn.onclick = () => triggerFaceCheckIn(v.id);
+                btn.onclick = () => (kioskMode === 'out' ? manualCheckOut(v.id) : triggerFaceCheckIn(v.id));
                 btn.className = "p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 transition-all text-left flex items-center space-x-2 group";
                 btn.innerHTML = `
                     <img src="${v.photo}" class="w-7 h-7 rounded-lg object-cover border border-slate-700" alt="${v.name}">
                     <div class="truncate">
                         <p class="text-[11px] font-bold text-slate-200 group-hover:text-emerald-300 truncate">${v.name.split(' ')[0]}</p>
-                        <p class="text-[9px] ${v.isCheckedIn ? 'text-emerald-400 font-semibold' : 'text-slate-500'}">${v.isCheckedIn ? 'Entré' : 'Non pointé'}</p>
+                        <p class="text-[9px] ${kioskMode === 'out' ? (v.todayExit ? 'text-orange-400 font-semibold' : (v.isCheckedIn ? 'text-emerald-400 font-semibold' : 'text-slate-500')) : (v.isCheckedIn ? 'text-emerald-400 font-semibold' : 'text-slate-500')}">${kioskMode === 'out' ? (v.todayExit ? 'Sorti ' + v.todayExit : (v.isCheckedIn ? 'Présent' : 'Pas entré')) : (v.isCheckedIn ? 'Entré' : 'Non pointé')}</p>
                     </div>
                 `;
                 container.appendChild(btn);
@@ -844,7 +889,36 @@
         }
 
         // ---------- Scan status helper ----------
-        const IDLE_TEXT = "En attente de passage devant la porte...";
+        let kioskMode = 'in';   // 'in' = Entrée, 'out' = Sortie
+        function idleText() {
+            return kioskMode === 'out'
+                ? "SORTIE : passez devant la caméra pour pointer votre sortie..."
+                : "ENTRÉE : passez devant la caméra pour pointer votre arrivée...";
+        }
+
+        function setKioskMode(mode) {
+            kioskMode = mode === 'out' ? 'out' : 'in';
+            const inBtn = document.getElementById('modeInBtn');
+            const outBtn = document.getElementById('modeOutBtn');
+            const on = 'text-white shadow-lg ';
+            const off = 'bg-slate-900 text-slate-400 border border-slate-700 hover:text-white';
+            inBtn.className = 'py-3.5 rounded-2xl text-sm font-extrabold tracking-wide transition-all ' + (kioskMode === 'in' ? on + 'bg-emerald-600 shadow-emerald-600/30' : off);
+            outBtn.className = 'py-3.5 rounded-2xl text-sm font-extrabold tracking-wide transition-all ' + (kioskMode === 'out' ? on + 'bg-orange-500 shadow-orange-500/30' : off);
+            const badge = document.getElementById('modeBadge');
+            badge.textContent = kioskMode === 'out' ? 'MODE : SORTIE' : 'MODE : ENTRÉE';
+            badge.className = 'absolute top-3 left-3 z-20 px-3 py-1 rounded-lg text-[11px] font-extrabold tracking-wider text-slate-950 ' + (kioskMode === 'out' ? 'bg-orange-400' : 'bg-emerald-500');
+            recoStreak = { id: null, n: 0 };
+            recoCooldownUntil = 0;
+            setScan(idleText(), 'amber');
+            renderQuickVendorButtons();
+        }
+
+        function setConfBadge(mode) {
+            const b = document.getElementById('confBadge');
+            if (!b) return;
+            b.textContent = mode === 'out' ? 'SORTIE' : 'ENTRÉE';
+            b.className = 'absolute -bottom-1 -right-1 text-slate-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow ' + (mode === 'out' ? 'bg-orange-400' : 'bg-emerald-500');
+        }
         let scanState = '', scanHoldUntil = 0;
         function setScan(text, color, holdMs) {
             const t = document.getElementById('scanStatusText');
@@ -879,6 +953,7 @@
                 time: currentTime,
                 status: statusLabel,
                 method: method,
+                exit: '',
                 ts: Date.now()
             };
 
@@ -888,6 +963,7 @@
             attendance.push(rec);
             recompute();
 
+            setConfBadge('in');
             document.getElementById('confAvatar').src = vendor.photo;
             document.getElementById('confName').textContent = vendor.name;
             document.getElementById('confRole').textContent = `${vendor.dept} • Maxi Bazar`;
@@ -897,6 +973,46 @@
                 <span>${method === 'visage' ? 'Visage reconnu !' : 'Pointage manuel.'} Entrée validée pour <strong>${esc(vendor.name)}</strong> (${statusLabel}).</span>
             `;
             setScan('Entrée confirmée : ' + vendor.name, 'emerald', 3000);
+        }
+
+        // ---------- Check-out (Sortie) ----------
+        function registerCheckOut(vendor, method) {
+            const now = new Date();
+            const t = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const today = localDate(now);
+            const old = attendance.find(a => a.vendorId === vendor.id && a.date === today);
+            if (!old) return { ok: false, msg: `${vendor.name} n'a pas pointé d'entrée aujourd'hui.` };
+            if (old.exit) return { ok: false, msg: `${vendor.name} : sortie déjà enregistrée à ${old.exit}.` };
+            if (t <= old.time) return { ok: false, msg: `Sortie trop proche de l'entrée (${old.time}). Réessayez dans une minute.` };
+
+            const rec = Object.assign({}, old, { exit: t, exitMethod: method });
+            window.cloud.saveAttendance(rec);
+            attendance = attendance.filter(x => !(x.vendorId === rec.vendorId && x.date === rec.date));
+            attendance.push(rec);
+            recompute();
+
+            setConfBadge('out');
+            document.getElementById('confAvatar').src = vendor.photo;
+            document.getElementById('confName').textContent = vendor.name;
+            document.getElementById('confRole').textContent = `${vendor.dept} • Maxi Bazar`;
+            document.getElementById('confTime').textContent = `Sortie Enregistrée à ${t}`;
+            document.getElementById('confMessage').innerHTML = `
+                <i class="fa-solid fa-circle-check text-orange-400"></i>
+                <span>${method === 'visage' ? 'Visage reconnu !' : 'Pointage manuel.'} Sortie validée pour <strong>${esc(vendor.name)}</strong>. À demain !</span>
+            `;
+            setScan('Sortie confirmée : ' + vendor.name, 'emerald', 3000);
+            return { ok: true };
+        }
+
+        function manualCheckOut(vendorId) {
+            if (!isCamActive) { alert("La caméra est actuellement en pause."); return; }
+            const v = vendors.find(x => x.id === vendorId);
+            if (!v) return;
+            if (!v.isCheckedIn) { alert(`${v.name} n'a pas pointé d'entrée aujourd'hui.`); return; }
+            if (v.todayExit) { alert(`${v.name} : sortie déjà enregistrée à ${v.todayExit}.`); return; }
+            if (!confirm(`Pointage manuel : enregistrer la sortie de ${v.name} ?`)) return;
+            const r = registerCheckOut(v, 'manuel');
+            if (!r.ok) alert(r.msg);
         }
 
         // Manual backup (button tap)
@@ -1036,7 +1152,7 @@
                 recoStreak = { id: null, n: 0 };
                 unknownFrames = 0;
                 hideFaceBox();
-                if (scanState !== IDLE_TEXT && Date.now() > scanHoldUntil) setScan(IDLE_TEXT, 'amber');
+                if (scanState !== idleText() && Date.now() > scanHoldUntil) setScan(idleText(), 'amber');
                 return;
             }
             showFaceBox(det.detection.box, video);
@@ -1071,6 +1187,11 @@
             const v = vendors.find(x => x.id === id);
             if (!v) return;
             recoCooldownUntil = Date.now() + 2500;
+            if (kioskMode === 'out') {
+                const r = registerCheckOut(v, 'visage');
+                if (!r.ok) setScan(r.msg, 'rose', 3500);
+                return;
+            }
             if (v.isCheckedIn) {
                 setScan(`Bonjour ${v.name}, entrée déjà enregistrée à ${v.todayCheckIn}.`, 'emerald', 3000);
                 return;
@@ -1093,7 +1214,7 @@
                                     faceReady = true;
                                     buildFaceIndex();
                                     setBadge('IA prête', true);
-                                    setScan(IDLE_TEXT, 'amber');
+                                    setScan(idleText(), 'amber');
                                 }).catch(() => {
                                     setBadge('IA indisponible', false);
                                     setScan('Reconnaissance indisponible (vérifiez internet). Utilisez le pointage manuel.', 'rose');
@@ -1276,7 +1397,7 @@
                         <img src="${vendor.photo}" class="w-8 h-8 rounded-xl object-cover border border-slate-700" alt="">
                         <div>
                             <p class="text-xs font-bold text-slate-200">${esc(log.name)}</p>
-                            <p class="text-[10px] text-slate-400 font-mono">Entrée à ${log.time}</p>
+                            <p class="text-[10px] text-slate-400 font-mono">Entrée à ${log.time}${log.exit ? ` · Sortie à ${log.exit}` : ''}</p>
                         </div>
                     </div>
                     <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${log.status === 'En Retard' ? 'bg-rose-500/15 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'}">
@@ -1332,6 +1453,70 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // ---------- Manual edit of a day's attendance ----------
+        let editAtt = { vendorId: '', date: '', name: '' };
+
+        function openEditAtt(vendorId, date) {
+            const v = rawVendors.find(x => x.id === vendorId);
+            const rec = attendance.find(a => a.vendorId === vendorId && a.date === date);
+            const name = v ? v.name : (rec ? rec.name : vendorId);
+            editAtt = { vendorId, date, name };
+            const dObj = new Date(date + 'T00:00:00');
+            document.getElementById('editAttTitle').textContent =
+                `${name} - ${dObj.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' })}`;
+            const nowT = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('editAttTime').value = rec ? rec.time : (date === localDate(new Date()) ? nowT : '08:00');
+            document.getElementById('editAttExit').value = rec && rec.exit ? rec.exit : '';
+            document.getElementById('editAttDeleteBtn').classList.toggle('hidden', !rec);
+            updateEditAttPreview();
+            document.getElementById('editAttModal').classList.remove('hidden');
+        }
+
+        function closeEditAtt() {
+            document.getElementById('editAttModal').classList.add('hidden');
+        }
+
+        function updateEditAttPreview() {
+            const t = document.getElementById('editAttTime').value;
+            const el = document.getElementById('editAttPreview');
+            if (!t) { el.textContent = ''; return; }
+            const late = t > '08:30';
+            el.innerHTML = late
+                ? '<span class="text-amber-400 font-semibold">Statut : En retard</span> (après 08:30)'
+                : '<span class="text-emerald-400 font-semibold">Statut : À l\'heure</span>';
+        }
+
+        function saveEditAtt() {
+            const t = document.getElementById('editAttTime').value;
+            const ex = document.getElementById('editAttExit').value || '';
+            if (!t) { alert("Indiquez l'heure d'entrée."); return; }
+            if (ex && ex <= t) { alert("L'heure de sortie doit être après l'heure d'entrée."); return; }
+            const old = attendance.find(a => a.vendorId === editAtt.vendorId && a.date === editAtt.date);
+            const rec = {
+                vendorId: editAtt.vendorId,
+                name: editAtt.name,
+                date: editAtt.date,
+                time: t,
+                exit: ex,
+                status: t > '08:30' ? 'En Retard' : 'À l\'heure',
+                method: 'manuel',
+                ts: old && old.ts ? old.ts : Date.now()
+            };
+            window.cloud.saveAttendance(rec);
+            attendance = attendance.filter(a => !(a.vendorId === rec.vendorId && a.date === rec.date));
+            attendance.push(rec);
+            recompute();
+            closeEditAtt();
+        }
+
+        function deleteEditAtt() {
+            if (!confirm(`Marquer ${editAtt.name} absent ce jour-là ? Son pointage sera supprimé.`)) return;
+            window.cloud.deleteAttendance(editAtt.date + '_' + editAtt.vendorId);
+            attendance = attendance.filter(a => !(a.vendorId === editAtt.vendorId && a.date === editAtt.date));
+            recompute();
+            closeEditAtt();
         }
 
         function changeReportWeek(delta) {
@@ -1393,19 +1578,20 @@
                 let present = 0, late = 0, absent = 0;
                 const cells = dates.map(x => {
                     const rec = attMap[r.id + '_' + x.s];
+                    const cellAttr = `class="p-2 text-center cursor-pointer hover:bg-slate-800/60" onclick="openEditAtt('${r.id}','${x.s}')" title="Cliquer pour modifier"`;
                     if (rec) {
                         present++;
                         const isLate = String(rec.status).includes('Retard');
                         if (isLate) late++;
-                        return `<td class="p-2 text-center"><span class="font-mono font-semibold ${isLate ? 'text-amber-400' : 'text-emerald-400'}">${esc(rec.time)}${rec.method === 'manuel' ? '*' : ''}</span></td>`;
+                        return `<td ${cellAttr}><span class="font-mono font-semibold ${isLate ? 'text-amber-400' : 'text-emerald-400'}">${esc(rec.time)}${rec.method === 'manuel' ? '*' : ''}</span>${rec.exit ? `<span class="block text-[9px] text-slate-400 font-mono">→ ${esc(rec.exit)}</span>` : ''}</td>`;
                     }
                     const beforeStart = r.since && x.s < r.since;
                     const isAbsentDay = !beforeStart && (x.s < todayStr || (x.s === todayStr && afternoon)) && !r.removed;
                     if (isAbsentDay) {
                         absent++;
-                        return `<td class="p-2 text-center"><span class="font-semibold text-rose-400">Absent</span></td>`;
+                        return `<td ${cellAttr}><span class="font-semibold text-rose-400">Absent</span></td>`;
                     }
-                    return `<td class="p-2 text-center text-slate-600">-</td>`;
+                    return `<td ${cellAttr}><span class="text-slate-600">-</span></td>`;
                 }).join('');
 
                 totPresent += present; totLate += late; totAbsent += absent;
@@ -1619,7 +1805,7 @@
 
         if (firebaseConfig.apiKey.startsWith('PASTE')) {
             loginError.textContent = "Firebase n'est pas configuré : collez votre firebaseConfig dans index.html.";
-            window.cloud = { saveVendor() {}, saveAttendance() {}, deleteVendor() {}, logout() {} };
+            window.cloud = { saveVendor() {}, saveAttendance() {}, deleteVendor() {}, deleteAttendance() {}, logout() {} };
         } else {
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
@@ -1635,6 +1821,7 @@
                 // one record per vendor per day -> id = date_vendorId
                 saveAttendance: (r) => setDoc(doc(db, 'attendance', r.date + '_' + r.vendorId), r).catch(fail),
                 deleteVendor: (id) => deleteDoc(doc(db, 'vendors', id)).catch(fail),
+                deleteAttendance: (id) => deleteDoc(doc(db, 'attendance', id)).catch(fail),
                 logout: () => signOut(auth)
             };
 
